@@ -1,4 +1,12 @@
 use rand::Rng;
+use std::error::Error;
+use csv;
+use serde::Serialize;
+
+#[derive(Debug, Serialize)]
+struct Record {
+    point: Vec<f64>,
+}
 
 pub struct PointSet {
     /// Points of the initial set
@@ -76,6 +84,16 @@ impl PointSet {
             }
         }
         distance_matrix
+    }
+
+    pub fn save_in_csv(&self, filepath: &str) -> Result<(), Box<dyn Error>> {
+        let mut wrt = csv::WriterBuilder::new().has_headers(false).from_path(filepath)?;
+        for point in &(*self.points) { // Use star notation just to show that we understand it
+            wrt.serialize(Record {
+                point: point.clone(),
+            })?;
+        }
+        Ok(())
     }
 }
 
