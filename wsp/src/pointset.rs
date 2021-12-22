@@ -1,7 +1,8 @@
-use rand::Rng;
-use std::error::Error;
 use csv;
+use rand::rngs::SmallRng;
+use rand::{Rng, SeedableRng};
 use serde::Serialize;
+use std::error::Error;
 
 #[derive(Debug, Serialize)]
 struct Record {
@@ -23,6 +24,8 @@ pub struct PointSet {
     /// For each point, the idx in the idx_sort of the closest
     /// active point
     idx_active: Vec<u32>,
+    /// Visited point to avoid looping over the same point several times => ensures that we clear all the space
+    visited: Vec<bool>,
 }
 
 impl PointSet {
@@ -36,6 +39,7 @@ impl PointSet {
             idx_sort: Vec::with_capacity(points.len()),
             // Start at 1 because closest is itself
             idx_active: vec![1; points.len()],
+            visited: vec![false; points.len()],
             points,
         };
         p.compute_closest_idx();
@@ -43,11 +47,10 @@ impl PointSet {
     }
 
     pub fn init_from_random(nb_points: u32, nb_dim: usize) -> PointSet {
-
         let mut points: Vec<Vec<f64>> = Vec::with_capacity(nb_points as usize);
 
         // TODO: add seed
-        let mut rng = rand::thread_rng();
+        let mut rng = SmallRng::seed_from_u64(10);
 
         // Generate random points
         for _ in 0..nb_points {
@@ -59,12 +62,16 @@ impl PointSet {
         }
 
         PointSet::init_from_preset(points)
-    } 
+    }
 
     fn compute_closest_idx(&mut self) -> () {
         for i in 0..self.nb_active as usize {
             let mut idxs: Vec<usize> = (0..self.nb_active as usize).collect();
-            idxs.sort_by(|&a, &b| self.distance_matrix[i][a].partial_cmp(&self.distance_matrix[i][b]).unwrap());
+            idxs.sort_by(|&a, &b| {
+                self.distance_matrix[i][a]
+                    .partial_cmp(&self.distance_matrix[i][b])
+                    .unwrap()
+            });
             self.idx_sort.push(idxs);
         }
     }
@@ -78,7 +85,7 @@ impl PointSet {
         let nb_points = points.len();
         let mut distance_matrix = vec![vec![0.0f64; nb_points]; nb_points];
         for i in 0..nb_points {
-            for j in i+1..nb_points {
+            for j in i + 1..nb_points {
                 distance_matrix[i][j] = distance_sq(&points[i], &points[j]);
                 distance_matrix[j][i] = distance_matrix[i][j]; // Primitive type copy
             }
@@ -87,8 +94,14 @@ impl PointSet {
     }
 
     pub fn save_in_csv(&self, filepath: &str) -> Result<(), Box<dyn Error>> {
-        let mut wrt = csv::WriterBuilder::new().has_headers(false).from_path(filepath)?;
-        for point in &(*self.points) { // Use star notation just to show that we understand it
+        let mut wrt = csv::WriterBuilder::new()
+            .has_headers(false)
+            .from_path(filepath)?;
+        for (i, point) in (&(*self.points)).iter().enumerate() {
+            // Use star notation just to show that we understand it
+            if !self.active[i] {
+                continue;
+            }
             wrt.serialize(Record {
                 point: point.clone(),
             })?;
@@ -116,7 +129,8 @@ fn wsp_loop_std(set: &mut PointSet, d_min: f64, mut origin: u32) -> () {
             // Self point
             if i as u32 == origin {
                 continue;
-            } else if !set.active[i] { // Already dead point
+            } else if !set.active[i] {
+                // Already dead point
                 continue;
             } else {
                 // Step 4: eliminate points in the circle
@@ -145,6 +159,7 @@ fn wsp_loop_std(set: &mut PointSet, d_min: f64, mut origin: u32) -> () {
 
 fn wsp_loop_fast(set: &mut PointSet, d_min: f64, mut origin: usize) {
     loop {
+        println!("Rentre ici: {}", origin);
         let mut unchanged = true;
         let idxs_this_origin = &mut set.idx_sort[origin as usize];
 
@@ -153,9 +168,11 @@ fn wsp_loop_fast(set: &mut PointSet, d_min: f64, mut origin: usize) {
         // We stop iterating once we find the next closest point
         // that is 1) active and 2) at a higher distance than *d_min*
         let mut closest_origin: usize = set.idx_active[origin as usize] as usize;
+        set.visited[origin] = true;
         loop {
             if closest_origin >= set.points.len() {
-                panic!("A computation error seems to have occured");
+                println!("Visited all points");
+                break;
             }
             let point_idx = idxs_this_origin[closest_origin];
             if !set.active[point_idx as usize] {
@@ -165,15 +182,30 @@ fn wsp_loop_fast(set: &mut PointSet, d_min: f64, mut origin: usize) {
             } else if set.distance_matrix[origin as usize][point_idx] < d_min {
                 // Point too close to the origin => kill
                 set.active[point_idx] = false;
+                println!(
+                    "is off {:?} {} because dist is {}",
+                    set.points[point_idx],
+                    point_idx,
+                    set.distance_matrix[origin as usize][point_idx]
+                );
                 set.nb_active -= 1;
                 closest_origin += 1;
-                unchanged = true; // We remove another point
+                unchanged = false; // We remove another point
+            } else if set.visited[point_idx] {
+                closest_origin += 1;
             } else {
                 // Closest active point remaining is far enough from the origin
                 // Stop the loop and this point is the next origin
                 // Update the closest_origin of the current origin just in case
                 set.idx_active[origin as usize] = closest_origin as u32;
-                origin = closest_origin;
+                println!(
+                    "origin={} {:?}  next_origin={} because dist is {}",
+                    origin,
+                    set.points[origin as usize],
+                    closest_origin,
+                    set.distance_matrix[origin as usize][closest_origin]
+                );
+                origin = idxs_this_origin[closest_origin];
                 break; // Further points will always be at a higher distance
             }
         }
@@ -192,14 +224,12 @@ pub fn wsp(set: &mut PointSet, d_min: f64) -> () {
 
     // Step 3: chose random point
     println!("Commence");
-    let mut rng = rand::thread_rng();
-    let mut origin: u32 = rng.gen::<u32>() % set.points.len() as u32;
+    let mut rng = SmallRng::seed_from_u64(10);
+    let origin: u32 = rng.gen::<u32>() % set.points.len() as u32;
 
     // Step 4, 5, 6: call specific algorithm for speed
-    wsp_loop_std(set, d_min, origin);
-    // wsp_loop_fast(set, d_min, origin as usize);
-
-    
+    // wsp_loop_std(set, d_min, origin);
+    wsp_loop_fast(set, d_min, origin as usize);
 }
 
 #[cfg(test)]

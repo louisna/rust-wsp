@@ -31,13 +31,18 @@ fn main() {
     for i in 0..5 {
         points.print_from_idx(i);
     }
-    if let Err(err) = points.save_in_csv(&args.output_file) {
+    if let Err(err) = points.save_in_csv("initial.csv") {
         println!("Error writing in CSV: {}", err);
         process::exit(1);
     }
     
     wsp(&mut points, args.d_min);
-    println!("{}", points.nb_active);
+    println!("Active: {}", points.nb_active);
+
+    if let Err(err) = points.save_in_csv(&args.output_file) {
+        println!("Error writing in CSV: {}", err);
+        process::exit(1);
+    }
 
 
 }
