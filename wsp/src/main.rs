@@ -4,6 +4,8 @@ use pointset::{wsp, PointSet};
 use std::process;
 use structopt::StructOpt;
 
+use crate::pointset::adaptive_wsp;
+
 /// Set the parameters of the WSP space filling algorithm
 #[derive(StructOpt)]
 struct Cli {
@@ -15,7 +17,7 @@ struct Cli {
     _initial_algo: String,
     /// Number of points in the initial set of candidate points (major impact)
     #[structopt(short = "n", long = "nb-initial", default_value = "2000")]
-    nb_initial: u32,
+    nb_initial: usize,
     /// Minimal distance desired
     #[structopt(short = "d", long = "distance", default_value = "1.0")]
     d_min: f64,
@@ -25,6 +27,9 @@ struct Cli {
     /// Seed for the origin choice and the initialization
     #[structopt(short = "s", long = "seed", default_value = "51")]
     seed: u64,
+    /// Use adaptive algorithm instead of distance input
+    #[structopt(long = "adaptive")]
+    use_adaptive: Option<usize>,
 }
 
 fn main() {
@@ -39,8 +44,10 @@ fn main() {
         process::exit(1);
     }
 
-    wsp(&mut points, args.d_min);
-    println!("Active: {}", points.nb_active);
+    match args.use_adaptive {
+        Some(obj_nb) => adaptive_wsp(&mut points, obj_nb),
+        None => wsp(&mut points, args.d_min),
+    }
 
     if let Err(err) = points.save_in_csv(&args.output_file) {
         println!("Error writing in CSV: {}", err);
