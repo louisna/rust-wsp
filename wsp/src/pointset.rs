@@ -131,7 +131,7 @@ impl PointSet {
     }
 }
 
-pub fn distance_sq(p1: &[f64], p2: &[f64]) -> f64 {
+pub fn _distance_sq(p1: &[f64], p2: &[f64]) -> f64 {
     let mut dist: f64 = 0.0;
     for i in 0..p1.len() {
         dist += (p1[i] - p2[i]) * (p1[i] - p2[i]);
@@ -262,11 +262,11 @@ mod tests {
     fn test_distance_sq() {
         let mut p1: Vec<f64> = vec![1.0, 0.0];
         let mut p2 = vec![0.0, 0.0];
-        assert_eq!(distance_sq(&p1, &p2), 1.0);
+        assert_eq!(_distance_sq(&p1, &p2), 1.0);
 
         p1 = vec![2.0, 2.0];
         p2 = vec![2.0, 9.0];
-        assert_eq!(distance_sq(&p1, &p2), 49.0);
+        assert_eq!(_distance_sq(&p1, &p2), 49.0);
     }
 
     #[test]
@@ -286,7 +286,7 @@ mod tests {
         let p2 = vec![4.0, 0.0];
         let p3 = vec![4.0, 3.0];
         let (distance_matrix, d_min, d_max) =
-            PointSet::compute_distance_matrix(&vec![p1, p2, p3], Some(&distance_sq));
+            PointSet::compute_distance_matrix(&vec![p1, p2, p3], Some(&_distance_sq));
 
         let true_distance = vec![
             vec![0.0, 16.0, 25.0],
