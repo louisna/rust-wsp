@@ -1,6 +1,6 @@
-# WSP-Algorithm
+# rust-wsp
 
-A Rust implementation of the WSP space filling algorithm.
+A rust implementation of the WSP space filling algorithm.
 
 This is based on the paper from J. Santiago _et al_:
 ```
