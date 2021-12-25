@@ -64,4 +64,8 @@ Last iter: best approximation is distance=4.600477272267282, nb_active=201
 Nb active: 201
 ```
 
-The algorithm performs 13 iterations until reaching a plateau: further search will not result in a better 
+The algorithm performs 54 iterations until the minimal distance search space is completely explored. It will recompute the space (if needed) qith the minimal distance resulting in the best approximation of the target number of active points in the set. Here, it is 201, with an error of 1 compared to the objective.
+
+### CLI arguments
+
+Use `--help` to display the description of the command-line options.
