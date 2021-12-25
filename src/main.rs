@@ -27,24 +27,22 @@ struct Cli {
     /// Seed for the origin choice and the initialization
     #[structopt(short = "s", long = "seed", default_value = "51")]
     seed: u64,
-    /// Use adaptive algorithm instead of distance input
+    /// Use adaptive algorithm instead of distance input to reach <nb-target> active points in the space
     #[structopt(long = "adaptive")]
-    use_adaptive: Option<usize>,
+    nb_target: Option<usize>,
 }
 
 fn main() {
     let args = Cli::from_args();
 
     let mut points: PointSet = PointSet::init_from_random(args.nb_initial, args.dim, args.seed);
-    for i in 0..5 {
-        points.print_from_idx(i);
-    }
+
     if let Err(err) = points.save_in_csv("initial.csv") {
         println!("Error writing in CSV: {}", err);
         process::exit(1);
     }
 
-    match args.use_adaptive {
+    match args.nb_target {
         Some(obj_nb) => adaptive_wsp(&mut points, obj_nb),
         None => wsp(&mut points, args.d_min),
     }
@@ -53,4 +51,6 @@ fn main() {
         println!("Error writing in CSV: {}", err);
         process::exit(1);
     }
+
+    println!("Nb active: {}", points.nb_active);
 }

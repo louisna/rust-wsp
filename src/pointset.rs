@@ -86,7 +86,7 @@ impl PointSet {
         }
     }
 
-    pub fn print_from_idx(&self, i: usize) {
+    pub fn _print_from_idx(&self, i: usize) {
         let point: &Vec<f64> = &self.points[i];
         println!("Vec#{}: {:?}", i, point);
     }
@@ -207,7 +207,6 @@ pub fn adaptive_wsp(set: &mut PointSet, obj_nb: usize) {
     let mut d_min = set.d_min;
     let mut d_max = set.d_max;
     let mut d_search = (d_min + d_max) / 2.0;
-    let mut last_nb_active: usize = 0;
     let mut iter = 0;
     let mut best_distance = 0.0;
     let mut best_difference_active = set.nb_active - obj_nb;
@@ -233,13 +232,14 @@ pub fn adaptive_wsp(set: &mut PointSet, obj_nb: usize) {
             best_distance = d_search;
         }
 
+        // Stop condition if we cannot exactly reach the target number
+        let last_d_search = d_search;
         d_search = (d_min + d_max) / 2.0;
-        if last_nb_active == set.nb_active {
+        if (last_d_search - d_search).abs() <= f64::EPSILON {
             break;
         }
 
         // Reset parameters for the next iteration
-        last_nb_active = set.nb_active;
         set.reset_reseach_params();
     }
 
