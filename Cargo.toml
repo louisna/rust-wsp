@@ -6,7 +6,7 @@ license = "MIT"
 description = "Rust implementation of the WSP space filling algorithm"
 readme = "README.md"
 repository = "https://github.com/louisna/rust-wsp.git"
-keywords = ["WSP", "space filling algorithm"]
+keywords = ["WSP", "space-filling"]
 authors = ["Louis Navarre <louisnavarre@hotmail.com"]
 exclude = ["scripts/*"]
 
