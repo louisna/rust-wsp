@@ -203,7 +203,7 @@ pub fn wsp(set: &mut PointSet, d_min: f64) {
 /// based on that we obtain a set of a given number of points.
 /// Here we adaptively change d_min to get (an approximation of)
 /// the desired number of points active after the algorithm
-pub fn adaptive_wsp(set: &mut PointSet, obj_nb: usize) {
+pub fn adaptive_wsp(set: &mut PointSet, obj_nb: usize, verbose: bool) {
     let mut d_min = set.d_min;
     let mut d_max = set.d_max;
     let mut d_search = (d_min + d_max) / 2.0;
@@ -215,10 +215,12 @@ pub fn adaptive_wsp(set: &mut PointSet, obj_nb: usize) {
         wsp(set, d_search);
 
         // Binary search the best d_min
-        println!(
-            "Iter #{}: distance={}, nb_active={}",
-            iter, d_search, set.nb_active
-        );
+        if verbose {
+            println!(
+                "Iter #{}: distance={}, nb_active={}",
+                iter, d_search, set.nb_active
+            );
+        }
         match set.nb_active.cmp(&obj_nb) {
             Ordering::Greater => d_min = d_search,
             Ordering::Less => d_max = d_search,
@@ -249,10 +251,12 @@ pub fn adaptive_wsp(set: &mut PointSet, obj_nb: usize) {
         set.reset_reseach_params();
         wsp(set, d_search);
     }
-    println!(
-        "Last iter: best approximation is distance={}, nb_active={}",
-        d_search, set.nb_active
-    );
+    if verbose {
+        println!(
+            "Last iter: best approximation is distance={}, nb_active={}",
+            d_search, set.nb_active
+        );
+    }
 }
 
 #[cfg(test)]
@@ -375,9 +379,6 @@ mod tests {
             for j in i + 1..1000 {
                 if !points.active[j] {
                     continue;
-                }
-                if points.distance_matrix[i][j] < d_min {
-                    println!("{} {} {}", i, j, points.distance_matrix[i][j]);
                 }
                 assert!(points.distance_matrix[i][j] >= d_min);
             }

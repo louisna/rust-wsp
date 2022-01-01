@@ -1,6 +1,6 @@
 use std::process;
 use structopt::StructOpt;
-use wsp::{PointSet, wsp, adaptive_wsp};
+use wsp::{adaptive_wsp, wsp, PointSet};
 
 /// Set the parameters of the WSP space filling algorithm
 #[derive(StructOpt)]
@@ -42,7 +42,7 @@ fn main() {
     }
 
     match args.nb_target {
-        Some(obj_nb) => adaptive_wsp(&mut points, obj_nb),
+        Some(obj_nb) => adaptive_wsp(&mut points, obj_nb, true),
         None => wsp(&mut points, args.d_min),
     }
 
