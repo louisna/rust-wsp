@@ -131,7 +131,7 @@ impl PointSet {
     }
 }
 
-pub fn _distance_sq(p1: &[f64], p2: &[f64]) -> f64 {
+fn _distance_sq(p1: &[f64], p2: &[f64]) -> f64 {
     let mut dist: f64 = 0.0;
     for i in 0..p1.len() {
         dist += (p1[i] - p2[i]) * (p1[i] - p2[i]);
@@ -139,7 +139,7 @@ pub fn _distance_sq(p1: &[f64], p2: &[f64]) -> f64 {
     dist
 }
 
-pub fn manhattan_distance(p1: &[f64], p2: &[f64]) -> f64 {
+fn manhattan_distance(p1: &[f64], p2: &[f64]) -> f64 {
     p1.iter()
         .zip(p2.iter())
         .fold(0.0, |dist, (d1, d2)| dist + (d1 - d2).abs())
