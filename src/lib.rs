@@ -1,3 +1,13 @@
+//! Rust implementation of the WSP space filling algorithm.
+//! 
+//! Provides an implementation of the WSP algorithm. Creates a point set of randomly sampled points
+//! and runs the algorithm to remove points too close to each other. The resulting set (usually) contains less points
+//! than the original set, ensuring that all remaining points are fat enough from each other according to a
+//! minimal distance set by the user.
+//! 
+//! The crate also provides another function to dynamically adjust the minimal distance to target a specific number
+//! of resulting points in the point set.
+
 use rand::rngs::SmallRng;
 use rand::{Rng, SeedableRng};
 use serde::Serialize;
@@ -9,13 +19,17 @@ struct Record {
     point: Vec<f64>,
 }
 
+/// Internal representation of the WSP algorithm values. 
+/// It is needed for the computation and to store information about the resulting point set.
 pub struct PointSet {
     /// Points of the initial set
     pub points: Vec<Vec<f64>>,
     /// All ditances between all points
     pub distance_matrix: Vec<Vec<f64>>,
-    /// If true, the point is still in the set
+    /// If true, the point is still in the set. Otherwise, the point is considered as removed of the point set.
+    /// The user MUST only consider points with 'true' values as the only points in the resulting set
     pub active: Vec<bool>,
+    /// Number of active points in the set
     pub nb_active: usize,
     /// For each point, the idx sorted increasingly with distance
     /// to improve performance
@@ -24,7 +38,9 @@ pub struct PointSet {
     idx_active: Vec<usize>,
     /// Visited point to avoid looping over the same point several times => ensures that we clear all the space
     visited: Vec<bool>,
+    /// Minimal distance between points in the point set
     d_min: f64,
+    /// Maximal distance between points in the point set
     d_max: f64,
 }
 
@@ -183,13 +199,12 @@ fn wsp_loop_fast(set: &mut PointSet, d_min: f64, mut origin: usize) {
     }
 }
 
+/// Executes the WSP space filling algorithm according to the paper.
+/// (Pseudo-)randomly chooses an origin, and removes all points too close to it 
+/// according to the d_min value of the PointSet structure.
+/// Then, the new origin is the closest valid point from the old origin.
+/// The algorithm iterates like this until all points have been visited or removed.
 pub fn wsp(set: &mut PointSet, d_min: f64) {
-    // Step 1: generate initial set
-    // DONE
-
-    // Step 2: Compute distance matrix of the points
-    // DONE
-
     // Step 3: chose random point
     let mut rng = SmallRng::seed_from_u64(10);
     let origin: usize = rng.gen::<usize>() % set.points.len();
@@ -202,7 +217,7 @@ pub fn wsp(set: &mut PointSet, d_min: f64) {
 /// The traditional algorithm requires a d_min and
 /// based on that we obtain a set of a given number of points.
 /// Here we adaptively change d_min to get (an approximation of)
-/// the desired number of points active after the algorithm
+/// the desired number of points active after the algorithm.
 pub fn adaptive_wsp(set: &mut PointSet, obj_nb: usize, verbose: bool) {
     let mut d_min = set.d_min;
     let mut d_max = set.d_max;
