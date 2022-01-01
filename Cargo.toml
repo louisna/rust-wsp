@@ -8,6 +8,7 @@ readme = "README.md"
 repository = "https://github.com/louisna/rust-wsp.git"
 keywords = ["WSP", "space filling algorithm"]
 authors = ["Louis Navarre <louisnavarre@hotmail.com"]
+exclude = ["scripts/*"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
