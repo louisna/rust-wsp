@@ -1,12 +1,68 @@
-//! Rust implementation of the WSP space filling algorithm.
-//! 
-//! Provides an implementation of the WSP algorithm. Creates a point set of randomly sampled points
-//! and runs the algorithm to remove points too close to each other. The resulting set (usually) contains less points
-//! than the original set, ensuring that all remaining points are fat enough from each other according to a
-//! minimal distance set by the user.
-//! 
-//! The crate also provides another function to dynamically adjust the minimal distance to target a specific number
-//! of resulting points in the point set.
+//!
+//! A rust implementation of the WSP space filling algorithm.
+//!
+//! This is based on the paper from J. Santiago _et al_:
+//! ```
+//! [1] Santiago, J., Claeys-Bruno, M., & Sergent, M. (2012). Construction of space-filling designs using WSP algorithm for high dimensional spaces. Chemometrics and Intelligent Laboratory Systems, 113, 26-31.
+//! ```
+//!
+//! ## Usage
+//!
+//! Add the following line to the `Cargo.toml` file:
+//! ```toml
+//! [dependencies]
+//! wsp = "0.1.1"
+//! ```
+//! ## Use cases
+//!
+//! A space-filling algorithm enables to remove points to close to each other in a given space. Given a minimal distance `d_min` and an initial set of points, wsp builds a subset where all remaining points are at least `d_min` distant from each other.
+//!
+//! wsp also provides an alternative version of the classical WSP algorithm. Certain scenarios do not have any clue about the `d_min` to choose, but require a given number of remaining points in the subset. `adaptive_wsp` search the best `d_min` to create a subset of a target number of points.
+//!
+//! ## Example
+//!
+//! ### WSP
+//!
+//! The following example generates an initial set of 1000 points from a uniform random distribution, in a 20-dimensions space. The generation uses the seed 51. The minimal distance is arbitrarily set to 3.0.
+//!
+//! ```rust
+//! use wsp::{wsp, Pointset};
+//!
+//! fn main() {
+//!     // Generates the initial set
+//!     let mut points = Pointset::init_from_random(1000, 20, 51);
+//!
+//!     // Only keep distant enough points
+//!     let d_min = 3.0;
+//!     wsp(&mut points, d_min);
+//!
+//!     // Iterate over the remaining points
+//!     for valid_point in points.get_remaining() {
+//!         println!("{:?}", valid_point);
+//!     }
+//! }
+//! ```
+//!
+//! ### Adaptive WSP
+//!
+//! The next example uses the `adaptive_wsp` function with verbose mode. The initial set is similar to the previous example thanks to the seed. We aim to find a minimal distance such that the resulting set only contains 100 points.
+//!
+//! ```rust
+//! use wsp::{wsp, Pointset};
+//!
+//! fn main() {
+//!     // Generates the initial set
+//!     let mut points = Pointset::init_from_random(1000, 20, 51);
+//!
+//!     // Adaptive WSP makes a binary search to reach the target
+//!     // number of remaining points
+//!     let objective_nb: usize = 100;
+//!     adaptive_wsp(&mut points, objective_nb);
+//!
+//!     // Save the result in a CSV file
+//!     
+//! }
+//! ```
 
 use rand::rngs::SmallRng;
 use rand::{Rng, SeedableRng};
@@ -19,7 +75,7 @@ struct Record {
     point: Vec<f64>,
 }
 
-/// Internal representation of the WSP algorithm values. 
+/// Internal representation of the WSP algorithm values.
 /// It is needed for the computation and to store information about the resulting point set.
 pub struct PointSet {
     /// Points of the initial set
@@ -210,7 +266,7 @@ fn wsp_loop_fast(set: &mut PointSet, d_min: f64, mut origin: usize) {
 }
 
 /// Executes the WSP space filling algorithm according to the paper.
-/// (Pseudo-)randomly chooses an origin, and removes all points too close to it 
+/// (Pseudo-)randomly chooses an origin, and removes all points too close to it
 /// according to the d_min value of the PointSet structure.
 /// Then, the new origin is the closest valid point from the old origin.
 /// The algorithm iterates like this until all points have been visited or removed.
