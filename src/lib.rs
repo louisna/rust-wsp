@@ -145,6 +145,16 @@ impl PointSet {
         }
         Ok(())
     }
+
+    pub fn get_remaining(&self) -> Vec<Vec<f64>> {
+        let mut points: Vec<Vec<f64>> = Vec::with_capacity(self.nb_active);
+        for i in 0..self.points.len() {
+            if self.active[i] {
+                points.push(self.points[i].clone());
+            }
+        }
+        points
+    }
 }
 
 fn _distance_sq(p1: &[f64], p2: &[f64]) -> f64 {
