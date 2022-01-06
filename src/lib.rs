@@ -26,20 +26,16 @@
 //! The following example generates an initial set of 1000 points from a uniform random distribution, in a 20-dimensions space. The generation uses the seed 51. The minimal distance is arbitrarily set to 3.0.
 //!
 //! ```rust
-//! use wsp::{wsp, Pointset};
+//! // Generates the initial set
+//! let mut points = Pointset::init_from_random(1000, 20, 51);
 //!
-//! fn main() {
-//!     // Generates the initial set
-//!     let mut points = Pointset::init_from_random(1000, 20, 51);
+//! // Only keep distant enough points
+//! let d_min = 3.0;
+//! wsp(&mut points, d_min);
 //!
-//!     // Only keep distant enough points
-//!     let d_min = 3.0;
-//!     wsp(&mut points, d_min);
-//!
-//!     // Iterate over the remaining points
-//!     for valid_point in points.get_remaining() {
-//!         println!("{:?}", valid_point);
-//!     }
+//! // Iterate over the remaining points
+//! for valid_point in points.get_remaining() {
+//!     println!("{:?}", valid_point);
 //! }
 //! ```
 //!
@@ -48,19 +44,18 @@
 //! The next example uses the `adaptive_wsp` function with verbose mode. The initial set is similar to the previous example thanks to the seed. We aim to find a minimal distance such that the resulting set only contains 100 points.
 //!
 //! ```rust
-//! use wsp::{wsp, Pointset};
+//! // Generates the initial set
+//! let mut points = Pointset::init_from_random(1000, 20, 51);
 //!
-//! fn main() {
-//!     // Generates the initial set
-//!     let mut points = Pointset::init_from_random(1000, 20, 51);
+//! // Adaptive WSP makes a binary search to reach the target
+//! // number of remaining points
+//! let objective_nb: usize = 100;
+//! adaptive_wsp(&mut points, objective_nb);
 //!
-//!     // Adaptive WSP makes a binary search to reach the target
-//!     // number of remaining points
-//!     let objective_nb: usize = 100;
-//!     adaptive_wsp(&mut points, objective_nb);
-//!
-//!     // Save the result in a CSV file
-//!     
+//! // Save the result in a CSV file
+//! if let Err(err) = points.save_in_csv("wsp.csv") {
+//!     println!("Error writing in CSV: {}", err);
+//!     process::exit(1);
 //! }
 //! ```
 

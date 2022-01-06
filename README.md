@@ -63,6 +63,9 @@ fn main() {
     adaptive_wsp(&mut points, objective_nb);
 
     // Save the result in a CSV file
-    
+    if let Err(err) = points.save_in_csv("wsp.csv") {
+        println!("Error writing in CSV: {}", err);
+        process::exit(1);
+    }
 }
 ```
