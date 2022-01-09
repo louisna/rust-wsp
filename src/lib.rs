@@ -2,7 +2,7 @@
 //! A rust implementation of the WSP space filling algorithm.
 //!
 //! This is based on the paper from J. Santiago _et al_:
-//! ```
+//! ```raw
 //! [1] Santiago, J., Claeys-Bruno, M., & Sergent, M. (2012). Construction of space-filling designs using WSP algorithm for high dimensional spaces. Chemometrics and Intelligent Laboratory Systems, 113, 26-31.
 //! ```
 //!
@@ -27,11 +27,11 @@
 //!
 //! ```rust
 //! // Generates the initial set
-//! let mut points = Pointset::init_from_random(1000, 20, 51);
+//! let mut points = wsp::PointSet::init_from_random(1000, 20, 51);
 //!
 //! // Only keep distant enough points
 //! let d_min = 3.0;
-//! wsp(&mut points, d_min);
+//! wsp::wsp(&mut points, d_min);
 //!
 //! // Iterate over the remaining points
 //! for valid_point in points.get_remaining() {
@@ -45,17 +45,17 @@
 //!
 //! ```rust
 //! // Generates the initial set
-//! let mut points = Pointset::init_from_random(1000, 20, 51);
+//! let mut points = wsp::PointSet::init_from_random(1000, 20, 51);
 //!
 //! // Adaptive WSP makes a binary search to reach the target
 //! // number of remaining points
 //! let objective_nb: usize = 100;
-//! adaptive_wsp(&mut points, objective_nb);
+//! wsp::adaptive_wsp(&mut points, objective_nb, false);
 //!
 //! // Save the result in a CSV file
 //! if let Err(err) = points.save_in_csv("wsp.csv") {
 //!     println!("Error writing in CSV: {}", err);
-//!     process::exit(1);
+//!     std::process::exit(1);
 //! }
 //! ```
 
