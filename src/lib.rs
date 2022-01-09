@@ -11,7 +11,7 @@
 //! Add the following line to the `Cargo.toml` file:
 //! ```toml
 //! [dependencies]
-//! wsp = "0.1.1"
+//! wsp = "0.1.2"
 //! ```
 //! ## Use cases
 //!
