@@ -1,3 +1,5 @@
+![GitHub](https://img.shields.io/github/license/louisna/rust-wsp) ![Crates.io](https://img.shields.io/crates/v/wsp) ![docs.rs](https://img.shields.io/docsrs/wsp)
+
 # rust-wsp
 
 A rust implementation of the WSP space filling algorithm.
