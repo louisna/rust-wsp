@@ -41,7 +41,7 @@ fn main() {
 
     if let Some(filename) = args.output_file_before {
         if let Err(err) = points.save_in_csv(&filename) {
-            println!("Error writing in CSV: {}", err);
+            eprintln!("Error writing in CSV: {}", err);
             process::exit(1);
         }
     }
@@ -52,9 +52,10 @@ fn main() {
     }
 
     if let Err(err) = points.save_in_csv(&args.output_file) {
-        println!("Error writing in CSV: {}", err);
+        eprintln!("Error writing in CSV: {}", err);
         process::exit(1);
     }
-
-    println!("Nb active: {}", points.nb_active);
+    if args.verbose {
+        println!("Nb active: {}", points.nb_active);
+    }
 }

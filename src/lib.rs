@@ -58,6 +58,61 @@
 //!     std::process::exit(1);
 //! }
 //! ```
+//!
+//! ## Binary usage
+
+//! Use `cargo install wsp` to install a binary version of the rust-wsp crate. Both `wsp()` and `adaptive_wsp` are available through the command line.
+//!
+//! ### Classic WSP
+//!
+//! You may run the classic WSP version with
+//!
+//! ```bash
+//! wsp -n 1000 -m 20 -d 0.5
+//! ```
+//!
+//! This will run the WSP algorithm with 1000 initial points. Each point has a dimension of 10. The minimal distance between each point, as detailed in the paper, is set to 0.5. For now, the algorithm uses the l1 (Manhattan) distance, as it provides better separation in high dimensional space than the l2 (euclidian) distance. The result is stored in a file named `wsp.csv`. Each row represents a point in a 20 dimensions space that is far enough from its other neighbours. You may change the output file with the `-o` option.
+//!
+//! ### Adaptive WSP
+//!
+//! ```bash
+//! $ wsp -n 1000 -m 20 --adaptive 100
+//! ```
+//!
+//! Similarly to the previous command, the initial space if filled with 1000 points of 20 dimensions. However, now, the user does not need to specify the minimal distance between points, but instead the _desired_ number of points in the resulting set. The algorithm will perform a binary search on the minimal distance until 1) the resulting set contains the desired number of points or 2) there is not distance that can be found to reach this quantity. In the second scenario, rust-wsp uses the minimal distance resulting in a space where the number of points is _as close as possible_ to the desired value.
+//!
+//! Consider the example below, where we want 200 points in a space of 20 dimensions, initially filled with 1000 points:
+//! ```bash
+//! $ wsp -n 1000 -m 20 --adaptive 200 -v
+//! Iter #1: distance=7.430897367982144, nb_active=5
+//! Iter #2: distance=5.028120018334874, nb_active=98
+//! Iter #3: distance=3.826731343511239, nb_active=591
+//! Iter #4: distance=4.427425680923057, nb_active=270
+//! Iter #5: distance=4.727772849628966, nb_active=168
+//! Iter #6: distance=4.577599265276012, nb_active=209
+//! Iter #7: distance=4.652686057452489, nb_active=170
+//! Iter #8: distance=4.615142661364251, nb_active=195
+//! Iter #9: distance=4.5963709633201315, nb_active=207
+//! Iter #10: distance=4.605756812342191, nb_active=194
+//! Iter #11: distance=4.601063887831161, nb_active=191
+//! Iter #12: distance=4.5987174255756464, nb_active=206
+//! Iter #13: distance=4.599890656703404, nb_active=206
+//! Iter #14: distance=4.600477272267282, nb_active=201
+//! Iter #15: distance=4.600770580049222, nb_active=194
+//! Iter #16: distance=4.600623926158252, nb_active=194
+//! Iter #17: distance=4.600550599212767, nb_active=197
+//! [...]
+//! Iter #53: distance=4.60049404718639, nb_active=201
+//! Iter #54: distance=4.600494047186391, nb_active=197
+//! Last iter: best approximation is distance=4.600477272267282, nb_active=201
+//! Nb active: 201
+//! ```
+//!
+//! The algorithm performs 54 iterations until the minimal distance search space is completely explored. It will recompute the space (if needed) qith the minimal distance resulting in the best approximation of the target number of active points in the set. Here, it is 201, with an error of 1 compared to the objective. The resulting matrix is also stored in a file named `wsp.csv` by default.
+//!
+//! ### More help
+//!
+//! Run `wsp -h` or `wsp --help` for more information about the arguments.
 
 use rand::rngs::SmallRng;
 use rand::{Rng, SeedableRng};
@@ -96,6 +151,18 @@ pub struct PointSet {
 }
 
 impl PointSet {
+    /// Creates a 'PointSet' from an already initialised vector of points.
+    ///
+    /// # Arguments
+    ///
+    /// * `points` - The pre-initialised set of points.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let points: Vec<Vec<f64>> = vec![vec![1.0, 0.0, 1.0], vec![0.5, 0.5, 0.5]];
+    /// let poinset = wsp::PointSet::init_from_preset(points); // Give ownership
+    /// ```
     pub fn init_from_preset(points: Vec<Vec<f64>>) -> PointSet {
         // First compute the distance matrix, then move "points" to the
         // output structure
@@ -117,6 +184,21 @@ impl PointSet {
         p
     }
 
+    /// Creates a 'PointSet' using a random initialisation of the points following a uniform distribution.
+    ///
+    /// # Arguments
+    ///
+    /// * `nb_points` - The number of points in the set before running WSP.
+    /// * `nb_dim` - The dimension of the points.
+    /// * `seed` - The seed used for the uniform sampling of the coordinates of the points.
+    ///
+    /// # Example
+    ///
+    /// The following code snippet creates a PointSet with 100 points of dimension 10. The seed 51 is used for the
+    /// generation of the points.
+    /// ```
+    /// let poinset = wsp::PointSet::init_from_random(100, 10, 51); // Give ownership
+    /// ```
     pub fn init_from_random(nb_points: usize, nb_dim: usize, seed: u64) -> PointSet {
         let mut points: Vec<Vec<f64>> = Vec::with_capacity(nb_points);
 
@@ -153,11 +235,6 @@ impl PointSet {
         }
     }
 
-    pub fn _print_from_idx(&self, i: usize) {
-        let point: &Vec<f64> = &self.points[i];
-        println!("Vec#{}: {:?}", i, point);
-    }
-
     fn compute_distance_matrix(
         points: &[Vec<f64>],
         distance_algo: Option<&dyn Fn(&[f64], &[f64]) -> f64>,
@@ -181,6 +258,24 @@ impl PointSet {
         (distance_matrix, dmin, dmax)
     }
 
+    /// Stores a PointSet in a CSV file. This will store in a matrix form the active points in the PointSet.
+    /// Each row represents an active point, and each column a dimension in the space.
+    ///
+    /// # Arguments
+    ///
+    /// * `filepath` - The path to the file where to store the PointSet points.
+    ///
+    /// # Example
+    ///
+    /// The following code snippet stores the PointSet *before* running WSP
+    /// ```
+    /// let points = wsp::PointSet::init_from_random(100, 10, 51);
+    ///
+    /// if let Err(err) = points.save_in_csv("wsp.csv") {
+    ///     eprintln!("Error writing in CSV: {}", err);
+    ///     std::process::exit(1);
+    /// }
+    /// ```
     pub fn save_in_csv(&self, filepath: &str) -> Result<(), Box<dyn Error>> {
         let mut wrt = csv::WriterBuilder::new()
             .has_headers(false)
@@ -197,6 +292,24 @@ impl PointSet {
         Ok(())
     }
 
+    /// Returns a new vector containing only the active points of the PointSet.
+    ///
+    /// # Example
+    ///
+    /// The following code snippet stores the PointSet *before* running WSP
+    /// ```
+    /// // Generates the initial set
+    /// let mut points = wsp::PointSet::init_from_random(1000, 20, 51);
+    ///
+    /// // Only keep distant enough points
+    /// let d_min = 3.0;
+    /// wsp::wsp(&mut points, d_min);
+    ///
+    /// // Iterate over the remaining points
+    /// for valid_point in points.get_remaining() {
+    ///     println!("{:?}", valid_point);
+    /// }
+    /// ```
     pub fn get_remaining(&self) -> Vec<Vec<f64>> {
         let mut points: Vec<Vec<f64>> = Vec::with_capacity(self.nb_active);
         for i in 0..self.points.len() {
@@ -259,12 +372,42 @@ fn wsp_loop_fast(set: &mut PointSet, d_min: f64, mut origin: usize) {
         }
     }
 }
-
+/// Returns a new vector containing only the active points of the PointSet.
+///
+/// # Example
+///
+/// The following code snippet stores the PointSet *before* running WSP
+/// ```
+/// // Generates the initial set
+/// let mut points = wsp::PointSet::init_from_random(1000, 20, 51);
+///
+/// // Only keep distant enough points
+/// let d_min = 3.0;
+/// wsp::wsp(&mut points, d_min);
+///
+/// // Iterate over the remaining points
+/// for valid_point in points.get_remaining() {
+///     println!("{:?}", valid_point);
+/// }
+/// ```
 /// Executes the WSP space filling algorithm according to the paper.
 /// (Pseudo-)randomly chooses an origin, and removes all points too close to it
 /// according to the d_min value of the PointSet structure.
 /// Then, the new origin is the closest valid point from the old origin.
 /// The algorithm iterates like this until all points have been visited or removed.
+///
+/// # Arguments
+///
+/// * `set` - The PointSet instance. `set` is mutably borrowed.
+/// * `d_min` - The desired minimal distance between all remaining points in the PointSet.
+///
+/// # Example
+///
+/// ```
+/// let mut points = wsp::PointSet::init_from_random(1000, 20, 51);
+/// let d_min = 3.0;
+/// wsp::wsp(&mut points, d_min);
+/// ```
 pub fn wsp(set: &mut PointSet, d_min: f64) {
     // Step 3: chose random point
     let mut rng = SmallRng::seed_from_u64(10);
@@ -279,6 +422,20 @@ pub fn wsp(set: &mut PointSet, d_min: f64) {
 /// based on that we obtain a set of a given number of points.
 /// Here we adaptively change d_min to get (an approximation of)
 /// the desired number of points active after the algorithm.
+///
+/// # Arguments
+///
+/// * `set` - The PointSet instance. `set` is mutably borrowed.
+/// * `obj_nb` - The desired number of points remaining active in the set after the algorithm.
+/// * `verbose` - Print running information about the iterations of the algorithm.
+///
+/// # Example
+///
+/// ```
+/// let mut points = wsp::PointSet::init_from_random(1000, 20, 51);
+/// let objective_nb: usize = 100;
+/// wsp::adaptive_wsp(&mut points, objective_nb, false);
+/// ```
 pub fn adaptive_wsp(set: &mut PointSet, obj_nb: usize, verbose: bool) {
     let mut d_min = set.d_min;
     let mut d_max = set.d_max;
