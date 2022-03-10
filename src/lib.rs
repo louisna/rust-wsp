@@ -53,7 +53,7 @@
 //! wsp::adaptive_wsp(&mut points, objective_nb, false);
 //!
 //! // Save the result in a CSV file
-//! if let Err(err) = points.save_in_csv("wsp.csv") {
+//! if let Err(err) = points.save_in_csv("wsp.csv", false) {
 //!     println!("Error writing in CSV: {}", err);
 //!     std::process::exit(1);
 //! }
@@ -264,6 +264,7 @@ impl PointSet {
     /// # Arguments
     ///
     /// * `filepath` - The path to the file where to store the PointSet points.
+    /// * `transpose` - Transpose the matrix in the output CSV
     ///
     /// # Example
     ///
@@ -271,20 +272,42 @@ impl PointSet {
     /// ```
     /// let points = wsp::PointSet::init_from_random(100, 10, 51);
     ///
-    /// if let Err(err) = points.save_in_csv("wsp.csv") {
+    /// if let Err(err) = points.save_in_csv("wsp.csv", false) {
     ///     eprintln!("Error writing in CSV: {}", err);
     ///     std::process::exit(1);
     /// }
     /// ```
-    pub fn save_in_csv(&self, filepath: &str) -> Result<(), Box<dyn Error>> {
+    pub fn save_in_csv(&self, filepath: &str, transpose: bool) -> Result<(), Box<dyn Error>> {
         let mut wrt = csv::WriterBuilder::new()
             .has_headers(false)
             .from_path(filepath)?;
-        for (i, point) in (&(*self.points)).iter().enumerate() {
-            // Use star notation just to show that we understand it
-            if !self.active[i] {
-                continue;
+
+        // Use star notation just to show that we understand it
+        let points = if transpose {
+            let mut transposed: Vec<Vec<f64>> =
+                vec![Vec::with_capacity(self.nb_active); self.points[0].len()];
+            for (i, point) in (*self.points).iter().enumerate() {
+                if self.active[i] {
+                    for i in 0..point.len() {
+                        transposed[i].push(point[i]);
+                    }
+                }
             }
+            println!("{:?}", transposed);
+            transposed
+        } else {
+            self.points
+                .iter()
+                .enumerate()
+                .filter(|(i, _)| self.active[*i])
+                .to_owned()
+                .unzip::<usize, &Vec<f64>, Vec<usize>, Vec<&Vec<f64>>>()
+                .1
+                .iter()
+                .map(|x| x.to_owned().to_owned())
+                .collect()
+        };
+        for point in points.iter() {
             wrt.serialize(Record {
                 point: point.clone(),
             })?;

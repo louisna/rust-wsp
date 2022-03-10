@@ -32,6 +32,9 @@ struct Cli {
     /// Display debug information. Only for adaptive WSP
     #[structopt(short = "v", long = "verbose")]
     verbose: bool,
+    /// Transport the output matrix. Initially the matrix is nb points * nb dims.
+    #[structopt(short = "t", long = "transpose")]
+    transpose: bool,
 }
 
 fn main() {
@@ -40,7 +43,7 @@ fn main() {
     let mut points: PointSet = PointSet::init_from_random(args.nb_initial, args.dim, args.seed);
 
     if let Some(filename) = args.output_file_before {
-        if let Err(err) = points.save_in_csv(&filename) {
+        if let Err(err) = points.save_in_csv(&filename, args.transpose) {
             eprintln!("Error writing in CSV: {}", err);
             process::exit(1);
         }
@@ -51,7 +54,7 @@ fn main() {
         None => wsp(&mut points, args.d_min),
     }
 
-    if let Err(err) = points.save_in_csv(&args.output_file) {
+    if let Err(err) = points.save_in_csv(&args.output_file, args.transpose) {
         eprintln!("Error writing in CSV: {}", err);
         process::exit(1);
     }
