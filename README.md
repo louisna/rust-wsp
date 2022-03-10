@@ -16,7 +16,7 @@ This is based on the paper from J. Santiago _et al_:
 Add the following line to the `Cargo.toml` file:
 ```toml
 [dependencies]
-wsp = "0.1.3"
+wsp = "0.1.4"
 ```
 ### Use cases
 
