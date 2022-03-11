@@ -16,7 +16,7 @@ This is based on the paper from J. Santiago _et al_:
 Add the following line to the `Cargo.toml` file:
 ```toml
 [dependencies]
-wsp = "0.1.4"
+wsp = "0.1.5"
 ```
 ### Use cases
 
@@ -58,7 +58,7 @@ let objective_nb: usize = 100;
 wsp::adaptive_wsp(&mut points, objective_nb, false);
 
 // Save the result in a CSV file
-if let Err(err) = points.save_in_csv("wsp.csv") {
+if let Err(err) = points.save_in_csv("wsp.csv", false) {
     println!("Error writing in CSV: {}", err);
     std::process::exit(1);
 }

@@ -1,6 +1,6 @@
 [package]
 name = "wsp"
-version = "0.1.4"
+version = "0.1.5"
 edition = "2021"
 license = "MIT"
 description = "Rust implementation of the WSP space filling algorithm"
