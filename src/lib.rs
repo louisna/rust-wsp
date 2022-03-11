@@ -11,7 +11,7 @@
 //! Add the following line to the `Cargo.toml` file:
 //! ```toml
 //! [dependencies]
-//! wsp = "0.1.5"
+//! wsp = "0.1.6"
 //! ```
 //! ## Use cases
 //!
@@ -293,7 +293,6 @@ impl PointSet {
                     }
                 }
             }
-            println!("{:?}", transposed);
             transposed
         } else {
             self.points
